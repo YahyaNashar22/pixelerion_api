@@ -49,6 +49,8 @@ func main() {
 
 	shutdownSignal := make(chan os.Signal, 1)
 
+	// With graceful shutdown:
+	// SIGTERM → stop accepting new connections → let active requests finish → close resources → exit
 	signal.Notify(
 		shutdownSignal,
 		syscall.SIGINT,
