@@ -26,17 +26,36 @@ type HTTPConfig struct {
 }
 
 func Load() (*Config, error) {
+	var readTimeout, readHeaderTimeout, writeTimeout, idleTimeout, shutdownTimeout time.Duration
+	var err error
+
+	if readTimeout, err = getDurationEnv("HTTP_READ_TIMEOUT_SECONDS", 15*time.Second); err != nil {
+		return nil, err
+	}
+	if readHeaderTimeout, err = getDurationEnv("HTTP_READ_HEADER_TIMEOUT_SECONDS", 15*time.Second); err != nil {
+		return nil, err
+	}
+	if writeTimeout, err = getDurationEnv("HTTP_WRITE_TIMEOUT_SECONDS", 15*time.Second); err != nil {
+		return nil, err
+	}
+	if idleTimeout, err = getDurationEnv("HTTP_IDLE_TIMEOUT_SECONDS", 15*time.Second); err != nil {
+		return nil, err
+	}
+	if shutdownTimeout, err = getDurationEnv("HTTP_SHUTDOWN_TIMEOUT_SECONDS", 15*time.Second); err != nil {
+		return nil, err
+	}
+
 	cfg := &Config{
 		App: AppConfig{
 			Environment: getEnv("APP_ENV", "development"),
 		},
 		HTTP: HTTPConfig{
 			Port:              getEnv("HTTP_PORT", "8080"),
-			ReadTimeout:       getDurationEnv("HTTP_READ_TIMEOUT_SECONDS", 15*time.Second),
-			ReadHeaderTimeout: getDurationEnv("HTTP_READ_HEADER_TIMEOUT_SECONDS", 5*time.Second),
-			WriteTimeout:      getDurationEnv("HTTP_WRITE_TIMEOUT_SECONDS", 30*time.Second),
-			IdleTimeout:       getDurationEnv("HTTP_IDLE_TIMEOUT_SECONDS", 60*time.Second),
-			ShutdownTimeout:   getDurationEnv("HTTP_SHUTDOWN_TIMEOUT_SECONDS", 10*time.Second),
+			ReadTimeout:       readTimeout,
+			ReadHeaderTimeout: readHeaderTimeout,
+			WriteTimeout:      writeTimeout,
+			IdleTimeout:       idleTimeout,
+			ShutdownTimeout:   shutdownTimeout,
 		},
 	}
 
@@ -77,17 +96,28 @@ func getEnv(key, fallback string) string {
 	return value
 }
 
-func getDurationEnv(key string, fallback time.Duration) time.Duration {
+func getDurationEnv(key string, fallback time.Duration) (time.Duration, error) {
 	value, exists := os.LookupEnv(key)
 
 	if !exists || value == "" {
-		return fallback
+		return fallback, nil
 	}
 
 	seconds, err := strconv.Atoi(value)
 	if err != nil {
-		return fallback
+		return 0, fmt.Errorf(
+			"%s must be a valid number of seconds: %w",
+			key,
+			err,
+		)
 	}
 
-	return time.Duration(seconds) * time.Second
+	if seconds <= 0 {
+		return 0, fmt.Errorf(
+			"%s must be greater than zero",
+			key,
+		)
+	}
+
+	return time.Duration(seconds) * time.Second, nil
 }
