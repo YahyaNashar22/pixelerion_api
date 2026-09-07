@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/YahyaNashar22/pixelerion_api/internal/config"
+	"github.com/YahyaNashar22/pixelerion_api/internal/database"
 	"github.com/YahyaNashar22/pixelerion_api/internal/httpserver"
 )
 
@@ -26,6 +27,34 @@ func main() {
 
 		os.Exit(1)
 	}
+
+	mongoCtx, mongoCancel := context.WithTimeout(
+		context.Background(),
+		cfg.Mongo.ConnectTimeout,
+	)
+
+	mongoDb, err := database.ConnectMongo(
+		mongoCtx,
+		cfg.Mongo,
+	)
+
+	mongoCancel()
+
+	if err != nil {
+		logger.Error(
+			"failed to connect to mongodb",
+			"error",
+			err,
+		)
+
+		os.Exit(1)
+	}
+
+	logger.Info(
+		"mongodb connected",
+		"database",
+		cfg.Mongo.Database,
+	)
 
 	server := httpserver.New(cfg)
 
@@ -64,7 +93,6 @@ func main() {
 			"error",
 			err,
 		)
-		os.Exit(1)
 
 	case sig := <-shutdownSignal:
 		logger.Info(
@@ -74,20 +102,27 @@ func main() {
 		)
 	}
 
-	ctx, cancel := context.WithTimeout(
+	shutdownCtx, shutdownCancel := context.WithTimeout(
 		context.Background(),
 		cfg.HTTP.ShutdownTimeout,
 	)
 
-	defer cancel()
+	defer shutdownCancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error(
-			"graceful shutdown failed",
+			"graceful http shutdown failed",
 			"error",
 			err,
 		)
-		os.Exit(1)
+	}
+
+	if err := mongoDb.Disconnect(shutdownCtx); err != nil {
+		logger.Error(
+			"mongodb disconnect failed",
+			"error",
+			err,
+		)
 	}
 
 	logger.Info("server stopped gracefully")

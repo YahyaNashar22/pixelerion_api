@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	App  AppConfig
-	HTTP HTTPConfig
+	App   AppConfig
+	HTTP  HTTPConfig
+	Mongo MongoConfig
 }
 
 type AppConfig struct {
@@ -25,8 +26,14 @@ type HTTPConfig struct {
 	ShutdownTimeout   time.Duration
 }
 
+type MongoConfig struct {
+	URI            string
+	Database       string
+	ConnectTimeout time.Duration
+}
+
 func Load() (*Config, error) {
-	var readTimeout, readHeaderTimeout, writeTimeout, idleTimeout, shutdownTimeout time.Duration
+	var readTimeout, readHeaderTimeout, writeTimeout, idleTimeout, shutdownTimeout, connectTimeout time.Duration
 	var err error
 
 	if readTimeout, err = getDurationEnv("HTTP_READ_TIMEOUT_SECONDS", 15*time.Second); err != nil {
@@ -45,6 +52,10 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	if connectTimeout, err = getDurationEnv("MONGODB_CONNECT_TIMEOUT_SECONDS", 10*time.Second); err != nil {
+		return nil, err
+	}
+
 	cfg := &Config{
 		App: AppConfig{
 			Environment: getEnv("APP_ENV", "development"),
@@ -56,6 +67,11 @@ func Load() (*Config, error) {
 			WriteTimeout:      writeTimeout,
 			IdleTimeout:       idleTimeout,
 			ShutdownTimeout:   shutdownTimeout,
+		},
+		Mongo: MongoConfig{
+			URI:            os.Getenv("MONGODB_URI"),
+			Database:       getEnv("MONGODB_DATABASE", "pixelerion_api"),
+			ConnectTimeout: connectTimeout,
 		},
 	}
 
@@ -81,6 +97,14 @@ func (c *Config) validate() error {
 		return fmt.Errorf(
 			"APP_ENV must be development, staging, production, or test",
 		)
+	}
+
+	if c.Mongo.URI == "" {
+		return fmt.Errorf("MONGODB_URI is required")
+	}
+
+	if c.Mongo.Database == "" {
+		return fmt.Errorf("MONGODB_DATABASE is required")
 	}
 
 	return nil
