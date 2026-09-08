@@ -8,10 +8,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/YahyaNashar22/pixelerion_api/internal/config"
 	"github.com/YahyaNashar22/pixelerion_api/internal/database"
+	"github.com/YahyaNashar22/pixelerion_api/internal/handler"
 	"github.com/YahyaNashar22/pixelerion_api/internal/httpserver"
+	"github.com/YahyaNashar22/pixelerion_api/internal/service"
+
+	mongoRepository "github.com/YahyaNashar22/pixelerion_api/internal/repository/mongo"
 )
 
 func main() {
@@ -50,13 +55,44 @@ func main() {
 		os.Exit(1)
 	}
 
+	userRepository := mongoRepository.NewUserRepository(mongoDb.Database)
+	indexCtx, indexCancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+
+	err = userRepository.EnsureIndexes(indexCtx)
+
+	indexCancel()
+
+	if err != nil {
+		logger.Error(
+			"failed to initialize database indexes",
+			"error",
+			err,
+		)
+
+		_ = mongoDb.Disconnect(
+			context.Background(),
+		)
+
+		os.Exit(1)
+	}
+
+	clientService := service.NewClientService(userRepository)
+
+	clientHandler := handler.NewClientHandler(clientService)
+
 	logger.Info(
 		"mongodb connected",
 		"database",
 		cfg.Mongo.Database,
 	)
 
-	server := httpserver.New(cfg)
+	server := httpserver.New(
+		cfg,
+		clientHandler,
+	)
 
 	serverErrors := make(chan error, 1)
 

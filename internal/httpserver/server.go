@@ -6,16 +6,22 @@ import (
 	"net/http"
 
 	"github.com/YahyaNashar22/pixelerion_api/internal/config"
+	"github.com/YahyaNashar22/pixelerion_api/internal/handler"
 )
 
 type Server struct {
 	server *http.Server
 }
 
-func New(cfg *config.Config) *Server {
+func New(
+	cfg *config.Config,
+	clientHandler *handler.ClientHandler,
+) *Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", healthHandler)
+
+	mux.HandleFunc("POST /api/v1/admin/clients", clientHandler.Create)
 
 	httpServer := &http.Server{
 		Addr:    ":" + cfg.HTTP.Port,

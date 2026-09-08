@@ -58,8 +58,8 @@ func (
 		return nil, fmt.Errorf("invalid email address")
 	}
 
-	if len(input.Password) < 12 {
-		return nil, fmt.Errorf("password must contain at least 12 characters")
+	if len(input.Password) < 6 {
+		return nil, fmt.Errorf("password must contain at least 6 characters")
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword(

@@ -101,7 +101,7 @@ func (r *UserRepository) EnsureIndexes(
 	return nil
 }
 
-func (r *UserRepository) FindUserByEmail(
+func (r *UserRepository) FindByEmail(
 	ctx context.Context,
 	email string,
 ) (*domain.User, error) {
@@ -127,7 +127,7 @@ func (r *UserRepository) FindUserByEmail(
 	return documentToDomain(doc), nil
 }
 
-func (r *UserRepository) FindUserByUsername(
+func (r *UserRepository) FindByUsername(
 	ctx context.Context,
 	username string,
 ) (*domain.User, error) {
