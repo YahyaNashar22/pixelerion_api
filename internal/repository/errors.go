@@ -3,6 +3,7 @@ package repository
 import "errors"
 
 var (
-	ErrNotFound = errors.New("resource not found")
-	ErrConflict = errors.New("resource already exists")
+	ErrNotFound            = errors.New("resource not found")
+	ErrConflict            = errors.New("resource already exists")
+	ErrClientAlreadyExists = errors.New("client already exists")
 )
