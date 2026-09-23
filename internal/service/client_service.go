@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/mail"
 	"strings"
 	"time"
 
+	appError "github.com/YahyaNashar22/pixelerion_api/internal/apperror"
 	"github.com/YahyaNashar22/pixelerion_api/internal/domain"
 	"github.com/YahyaNashar22/pixelerion_api/internal/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -47,19 +47,19 @@ func (
 	)
 
 	if username == "" {
-		return nil, fmt.Errorf("username is required")
+		return nil, appError.Validation("username is required", nil)
 	}
 
 	if len(username) < 3 {
-		return nil, fmt.Errorf("username must contain at least 3 characters")
+		return nil, appError.Validation("username must contain at least 3 characters", nil)
 	}
 
 	if _, err := mail.ParseAddress(email); err != nil {
-		return nil, fmt.Errorf("invalid email address")
+		return nil, appError.Validation("invalid email address", err)
 	}
 
 	if len(input.Password) < 6 {
-		return nil, fmt.Errorf("password must contain at least 6 characters")
+		return nil, appError.Validation("password must contain at least 6 characters", nil)
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword(
@@ -68,8 +68,9 @@ func (
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf(
-			"hash password: %w", err,
+		return nil, appError.Internal(
+			"failed to process password",
+			err,
 		)
 	}
 
@@ -96,11 +97,15 @@ func (
 			err,
 			repository.ErrConflict,
 		) {
-			return nil, repository.ErrClientAlreadyExists
+			return nil, appError.Conflict(
+				"client already exists",
+				err,
+			)
 		}
 
-		return nil, fmt.Errorf(
-			"create client: %w", err,
+		return nil, appError.Internal(
+			"failed to create client",
+			err,
 		)
 	}
 
