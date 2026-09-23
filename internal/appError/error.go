@@ -30,3 +30,51 @@ func (e *Error) Error() string {
 func (e *Error) Unwrap() error {
 	return e.Err
 }
+
+func Validation(message string, err error) *Error {
+	return &Error{
+		Code:    CodeValidation,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func Unauthorized(message string, err error) *Error {
+	return &Error{
+		Code:    CodeUnauthorized,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func Forbidden(message string, err error) *Error {
+	return &Error{
+		Code:    CodeForbidden,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func NotFound(message string, err error) *Error {
+	return &Error{
+		Code:    CodeNotFound,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func Conflict(message string, err error) *Error {
+	return &Error{
+		Code:    CodeConflict,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func Internal(message string, err error) *Error {
+	return &Error{
+		Code:    CodeInternal,
+		Message: message,
+		Err:     err,
+	}
+}
