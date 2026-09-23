@@ -2,9 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
+	"github.com/YahyaNashar22/pixelerion_api/internal/appError"
+	"github.com/YahyaNashar22/pixelerion_api/internal/httpx"
 	"github.com/YahyaNashar22/pixelerion_api/internal/service"
 )
 
@@ -33,10 +34,7 @@ type createClientResponse struct {
 	Role     string `json:"role"`
 }
 
-func (h *ClientHandler) Create(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (h *ClientHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req createClientRequest
 
 	decoder := json.NewDecoder(r.Body)
@@ -44,14 +42,7 @@ func (h *ClientHandler) Create(
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&req); err != nil {
-		writeJSON(
-			w,
-			http.StatusBadRequest,
-			map[string]string{
-				"error": "invalid request body",
-			},
-		)
-
+		httpx.WriteError(w, appError.Validation("invalid request body", err))
 		return
 	}
 
@@ -65,32 +56,11 @@ func (h *ClientHandler) Create(
 	)
 
 	if err != nil {
-		if errors.Is(
-			err,
-			service.ErrClientAlreadyExists,
-		) {
-			writeJSON(
-				w,
-				http.StatusConflict,
-				map[string]string{
-					"error": "client already exists",
-				},
-			)
-			return
-		}
-
-		writeJSON(
-			w,
-			http.StatusBadRequest,
-			map[string]string{
-				"error": err.Error(),
-			},
-		)
-
+		httpx.WriteError(w, err)
 		return
 	}
 
-	writeJSON(
+	httpx.WriteJSON(
 		w,
 		http.StatusCreated,
 		createClientResponse{
@@ -100,19 +70,4 @@ func (h *ClientHandler) Create(
 			Role:     string(user.Role),
 		},
 	)
-}
-
-func writeJSON(
-	w http.ResponseWriter,
-	status int,
-	data any,
-) {
-	w.Header().Set(
-		"Content-Type",
-		"application/json",
-	)
-
-	w.WriteHeader(status)
-
-	_ = json.NewEncoder(w).Encode(data)
 }

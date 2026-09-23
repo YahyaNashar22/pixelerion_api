@@ -1,4 +1,4 @@
-package httpserver
+package httpx
 
 import (
 	"encoding/json"
