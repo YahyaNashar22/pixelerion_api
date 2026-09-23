@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	appError "github.com/YahyaNashar22/pixelerion_api/internal/apperror"
+	"github.com/YahyaNashar22/pixelerion_api/internal/appError"
 )
 
 type errorResponse struct {
