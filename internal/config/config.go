@@ -11,6 +11,7 @@ type Config struct {
 	App   AppConfig
 	HTTP  HTTPConfig
 	Mongo MongoConfig
+	Auth  AuthConfig
 }
 
 type AppConfig struct {
@@ -32,8 +33,13 @@ type MongoConfig struct {
 	ConnectTimeout time.Duration
 }
 
+type AuthConfig struct {
+	AccessTokenSecret string
+	AccessTokenTTL    time.Duration
+}
+
 func Load() (*Config, error) {
-	var readTimeout, readHeaderTimeout, writeTimeout, idleTimeout, shutdownTimeout, connectTimeout time.Duration
+	var readTimeout, readHeaderTimeout, writeTimeout, idleTimeout, shutdownTimeout, connectTimeout, accessTokenTTL time.Duration
 	var err error
 
 	if readTimeout, err = getDurationEnv("HTTP_READ_TIMEOUT_SECONDS", 15*time.Second); err != nil {
@@ -51,8 +57,10 @@ func Load() (*Config, error) {
 	if shutdownTimeout, err = getDurationEnv("HTTP_SHUTDOWN_TIMEOUT_SECONDS", 15*time.Second); err != nil {
 		return nil, err
 	}
-
 	if connectTimeout, err = getDurationEnv("MONGODB_CONNECT_TIMEOUT_SECONDS", 10*time.Second); err != nil {
+		return nil, err
+	}
+	if accessTokenTTL, err = getDurationEnv("AUTH_ACCESS_TOKEN_TTL_SECONDS", 15*time.Minute); err != nil {
 		return nil, err
 	}
 
@@ -72,6 +80,10 @@ func Load() (*Config, error) {
 			URI:            os.Getenv("MONGODB_URI"),
 			Database:       getEnv("MONGODB_DATABASE", "pixelerion_api"),
 			ConnectTimeout: connectTimeout,
+		},
+		Auth: AuthConfig{
+			AccessTokenSecret: os.Getenv("AUTH_ACCESS_TOKEN_SECRET"),
+			AccessTokenTTL:    accessTokenTTL,
 		},
 	}
 
@@ -105,6 +117,13 @@ func (c *Config) validate() error {
 
 	if c.Mongo.Database == "" {
 		return fmt.Errorf("MONGODB_DATABASE is required")
+	}
+
+	if c.Auth.AccessTokenSecret == "" {
+		return fmt.Errorf("AUTH_ACCESS_TOKEN_SECRET is required")
+	}
+	if len(c.Auth.AccessTokenSecret) < 32 {
+		return fmt.Errorf("AUTH_ACCESS_TOKEN_SECRET must contain at least 32 characters")
 	}
 
 	return nil

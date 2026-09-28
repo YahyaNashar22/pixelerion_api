@@ -153,6 +153,29 @@ func (r *UserRepository) FindByUsername(
 	return documentToDomain(doc), nil
 }
 
+func (r *UserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
+	objectID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, repository.ErrNotFound
+	}
+
+	var doc userDocument
+
+	err = r.collection.FindOne(ctx, bson.M{
+		"_id": objectID,
+	}).Decode(&doc)
+
+	if err != nil {
+		if errors.Is(err, mongoDriver.ErrNoDocuments) {
+			return nil, repository.ErrNotFound
+		}
+
+		return nil, fmt.Errorf("find user by id: %w", err)
+	}
+
+	return documentToDomain(doc), nil
+}
+
 func documentToDomain(
 	doc userDocument,
 ) *domain.User {
