@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/YahyaNashar22/pixelerion_api/internal/auth"
 	"github.com/YahyaNashar22/pixelerion_api/internal/config"
+	"github.com/YahyaNashar22/pixelerion_api/internal/domain"
 	"github.com/YahyaNashar22/pixelerion_api/internal/handler"
+	"github.com/YahyaNashar22/pixelerion_api/internal/middleware"
 )
 
 type Server struct {
@@ -15,13 +18,21 @@ type Server struct {
 
 func New(
 	cfg *config.Config,
+	authHandler *handler.AuthHandler,
 	clientHandler *handler.ClientHandler,
+	tokens *auth.TokenManager,
 ) *Server {
+	var createClientHandler http.Handler = http.HandlerFunc(clientHandler.Create)
+	createClientHandler = middleware.RequireRole(domain.UserRoleAdmin)(createClientHandler)
+	createClientHandler = middleware.Authenticate(tokens)(createClientHandler)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", healthHandler)
 
-	mux.HandleFunc("POST /api/v1/admin/clients", clientHandler.Create)
+	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
+
+	mux.Handle("POST /api/v1/admin/clients", createClientHandler)
 
 	httpServer := &http.Server{
 		Addr:    ":" + cfg.HTTP.Port,

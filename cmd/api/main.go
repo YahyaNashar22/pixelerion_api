@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/YahyaNashar22/pixelerion_api/internal/auth"
 	"github.com/YahyaNashar22/pixelerion_api/internal/config"
 	"github.com/YahyaNashar22/pixelerion_api/internal/database"
 	"github.com/YahyaNashar22/pixelerion_api/internal/handler"
@@ -56,6 +57,19 @@ func main() {
 	}
 
 	userRepository := mongoRepository.NewUserRepository(mongoDb.Database)
+
+	tokenManager := auth.NewTokenManager(
+		cfg.Auth.AccessTokenSecret,
+		cfg.Auth.AccessTokenTTL,
+	)
+
+	authService := service.NewAuthService(
+		userRepository,
+		tokenManager,
+	)
+
+	authHandler := handler.NewAuthHandler(authService)
+
 	indexCtx, indexCancel := context.WithTimeout(
 		context.Background(),
 		10*time.Second,
@@ -91,7 +105,9 @@ func main() {
 
 	server := httpserver.New(
 		cfg,
+		authHandler,
 		clientHandler,
+		tokenManager,
 	)
 
 	serverErrors := make(chan error, 1)
