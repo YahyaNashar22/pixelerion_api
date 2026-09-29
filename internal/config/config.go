@@ -8,10 +8,11 @@ import (
 )
 
 type Config struct {
-	App   AppConfig
-	HTTP  HTTPConfig
-	Mongo MongoConfig
-	Auth  AuthConfig
+	App            AppConfig
+	HTTP           HTTPConfig
+	Mongo          MongoConfig
+	Auth           AuthConfig
+	BootstrapAdmin BootstrapAdminConfig
 }
 
 type AppConfig struct {
@@ -36,6 +37,12 @@ type MongoConfig struct {
 type AuthConfig struct {
 	AccessTokenSecret string
 	AccessTokenTTL    time.Duration
+}
+
+type BootstrapAdminConfig struct {
+	Username string
+	Email    string
+	Password string
 }
 
 func Load() (*Config, error) {
@@ -85,6 +92,11 @@ func Load() (*Config, error) {
 			AccessTokenSecret: os.Getenv("AUTH_ACCESS_TOKEN_SECRET"),
 			AccessTokenTTL:    accessTokenTTL,
 		},
+		BootstrapAdmin: BootstrapAdminConfig{
+			Username: os.Getenv("BOOTSTRAP_ADMIN_USERNAME"),
+			Email:    os.Getenv("BOOTSTRAP_ADMIN_EMAIL"),
+			Password: os.Getenv("BOOTSTRAP_ADMIN_PASSWORD"),
+		},
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -124,6 +136,10 @@ func (c *Config) validate() error {
 	}
 	if len(c.Auth.AccessTokenSecret) < 32 {
 		return fmt.Errorf("AUTH_ACCESS_TOKEN_SECRET must contain at least 32 characters")
+	}
+
+	if c.BootstrapAdmin.Username == "" || c.BootstrapAdmin.Email == "" || c.BootstrapAdmin.Password == "" {
+		return fmt.Errorf("some or all BOOTSTRAP_ADMIN credentials are missing")
 	}
 
 	return nil

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/YahyaNashar22/pixelerion_api/internal/auth"
+	"github.com/YahyaNashar22/pixelerion_api/internal/bootstrap"
 	"github.com/YahyaNashar22/pixelerion_api/internal/config"
 	"github.com/YahyaNashar22/pixelerion_api/internal/database"
 	"github.com/YahyaNashar22/pixelerion_api/internal/handler"
@@ -91,6 +92,16 @@ func main() {
 		)
 
 		os.Exit(1)
+	}
+
+	bootstrapCtx, bootstrapCancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	err = bootstrap.EnsureAdmin(bootstrapCtx, userRepository, cfg.BootstrapAdmin.Username, cfg.BootstrapAdmin.Email, cfg.BootstrapAdmin.Password)
+
+	bootstrapCancel()
+
+	if err != nil {
+		logger.Error("failed to bootstrap admin", "error", err)
 	}
 
 	clientService := service.NewClientService(userRepository)
