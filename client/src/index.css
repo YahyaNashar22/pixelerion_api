@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-px-bg: #08080c;
+  --color-px-surface: #0f0f14;
+  --color-px-card: #131318;
+  --color-px-border: rgba(255,255,255,0.07);
+  --color-px-blue: #4285F4;
+  --color-px-red: #EA4335;
+  --color-px-yellow: #FBBC05;
+  --color-px-green: #34A853;
+  --color-px-muted: #6b7280;
+  --color-px-text: #e8e8f0;
+  --color-px-dim: #9898a8;
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #08080c;
+  color: #e8e8f0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* Gradient text util */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #4285F4 0%, #EA4335 35%, #FBBC05 65%, #34A853 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass surface */
+.glass {
+  background: rgba(19,19,24,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Animated multicolor border for Customer Portal button */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-spin {
+  to { --border-angle: 360deg; }
+}
+
+.btn-portal-border {
+  background: conic-gradient(from var(--border-angle), #4285F4, #EA4335, #FBBC05, #34A853, #4285F4) border-box;
+  border: 1.5px solid transparent;
+  animation: border-spin 3s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Glow effects */
+.glow-blue { box-shadow: 0 0 24px rgba(66,133,244,0.25); }
+.glow-red { box-shadow: 0 0 24px rgba(234,67,53,0.25); }
+.glow-yellow { box-shadow: 0 0 24px rgba(251,188,5,0.25); }
+.glow-green { box-shadow: 0 0 24px rgba(52,168,83,0.25); }
+
+/* Ticket status colors */
+.status-new { color: #4285F4; }
+.status-review { color: #FBBC05; }
+.status-estimated { color: #9b59b6; }
+.status-approved { color: #34A853; }
+.status-inprogress { color: #4285F4; }
+.status-waiting { color: #FBBC05; }
+.status-completed { color: #34A853; }
+.status-cancelled { color: #EA4335; }
