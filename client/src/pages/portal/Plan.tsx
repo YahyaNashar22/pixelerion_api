@@ -1,120 +1,166 @@
-import { motion } from 'framer-motion';
+import { useWorkspace } from "../../context/Workspace";
 
-const plans = [
-  { name: 'Starter', hours: 5, price: '$299', response: '2 business days', current: false },
-  { name: 'Growth', hours: 10, price: '$549', response: '1 business day', current: false },
-  { name: 'Premium', hours: 20, price: '$999', response: '4 business hours', current: true },
-  { name: 'Enterprise', hours: 40, price: '$1,799', response: '2 business hours', current: false },
-];
+import Panel, {
+  Disclosure,
+  Form,
+  PageTitle,
+} from "../../components/WorkspaceUI";
+
+import { date, duration, money, send } from "../../lib/api";
 
 export default function Plan() {
+  const { data, refresh } = useWorkspace();
+  if (!data) return null;
+
+  const active = data.subscriptions.find(
+    (s) => new Date(s.ends_at) > new Date(),
+  );
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Manrope' }}>Support Plan</h1>
-        <p className="text-[#6b7280] text-sm">Manage your current plan, purchase additional hours, or upgrade.</p>
-      </motion.div>
-
-      {/* Current plan card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        className="relative rounded-2xl p-8 overflow-hidden"
-        style={{ background: '#0d0d14', border: '1px solid rgba(66,133,244,0.3)' }}
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: '#4285F4', opacity: 0.05, filter: 'blur(60px)', transform: 'translate(30%,-30%)' }} />
-
-        <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-lg font-medium" style={{ background: 'rgba(52,168,83,0.15)', color: '#34A853' }}>Active</span>
-              <span className="text-xs text-[#6b7280]">Renews Sep 1, 2024</span>
-            </div>
-            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Manrope' }}>Premium Support</h2>
-            <p className="text-[#9898a8] mt-1">20 development hours / month</p>
-          </div>
-          <div className="text-right">
-            <p className="text-3xl font-bold text-white" style={{ fontFamily: 'Manrope' }}>$999</p>
-            <p className="text-xs text-[#6b7280]">per month</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Remaining', value: '12h 35m', color: '#34A853' },
-            { label: 'Used', value: '7h 25m', color: '#FBBC05' },
-            { label: 'Response Time', value: '4 biz hrs', color: '#4285F4' },
-            { label: 'Billing Period', value: 'Aug 1–31', color: '#9898a8' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-xs uppercase tracking-widest text-[#6b7280] mb-1.5">{s.label}</p>
-              <p className="text-base font-semibold" style={{ fontFamily: 'Manrope', color: s.color }}>{s.value}</p>
-            </div>
+    <>
+      <PageTitle title="Support that stays with you.">
+        Dedicated maintenance and technical assistance after your project goes
+        live.
+      </PageTitle>
+      <Panel title="Your current agreement">
+        {active ? (
+          <>
+            <h3>{active.plan_name}</h3>
+            <p>
+              {money(active.price_cents)} · {duration(active.included_minutes)}{" "}
+              allocated across this agreement
+            </p>
+            <p className="muted">
+              {date(active.starts_at)} · {date(active.ends_at)}. Monthly minutes
+              do not roll over.
+            </p>
+          </>
+        ) : (
+          <p className="muted">
+            You don’t have an active maintenance plan. Request one below and
+            we’ll confirm capacity and payment details.
+          </p>
+        )}
+      </Panel>
+      <div className="plan-grid">
+        {data.plans
+          .filter((p) => p.active)
+          .map((p) => (
+            <Panel title={p.name} key={p.id}>
+              <p className="plan-price">
+                {money(p.price_cents)}
+                <small>/ month</small>
+              </p>
+              <strong>{duration(p.included_minutes)} support / month</strong>
+              <p className="muted">
+                {p.duration_months}-month agreement;{" "}
+                {money(p.price_cents * p.duration_months)} total, paid
+                externally in advance.
+              </p>
+              <p className="muted">{p.description}</p>
+              <p className="response-target">{p.response_target}</p>
+              <Disclosure title="Request this plan">
+                <Form
+                  submit="Submit plan request"
+                  fields={[
+                    {
+                      name: "body",
+                      label: "Tell us about your support needs",
+                      type: "textarea",
+                      required: true,
+                    },
+                    {
+                      name: "terms",
+                      label:
+                        "I accept the support terms below, monthly advance billing and no rollover of unused minutes.",
+                      type: "checkbox",
+                      required: true,
+                    },
+                  ]}
+                  onSubmit={async (v) => {
+                    await send("/requests", {
+                      kind: "plan_change",
+                      title: "Request " + p.name,
+                      body: v.body,
+                      plan_id: p.id,
+                      terms_accepted: v.terms,
+                    });
+                    await refresh();
+                  }}
+                />
+              </Disclosure>
+            </Panel>
           ))}
+      </div>
+      <Panel title="Support terms">
+        <div className="prose-notes">
+          <p>
+            Plans are optional, billed monthly in advance and activated after
+            selection, acceptance of terms, payment and availability
+            confirmation. Fees for a period already started are non-refundable.
+          </p>
+          <p>
+            Minutes cover actual investigation, implementation, testing,
+            deployment, communication, consultation and technical meetings.
+            Unused monthly minutes do not roll over. Work on third-party issues
+            can also use support time; third-party fees remain your
+            responsibility.
+          </p>
+          <p>
+            Additional work requires your approval at $30/hour. Substantial new
+            functionality, major redesigns and architectural changes require a
+            separate quotation. Pixelerion will notify you before treating a
+            request as separate project work.
+          </p>
+          <p>
+            Support is provided during agreed business days and hours. Response
+            targets describe acknowledgement and initial evaluation, not
+            guaranteed resolution. Premium’s critical response applies to
+            substantially unavailable core production services, during business
+            hours.
+          </p>
+          <p>
+            Cancel before the next billing period. Future pricing may change
+            with reasonable advance notice. Custom support and dedicated
+            capacity are available by quotation. Without an active plan,
+            assistance depends on availability.
+          </p>
         </div>
-
-        {/* Progress */}
-        <div className="mb-6">
-          <div className="flex justify-between text-xs text-[#6b7280] mb-2">
-            <span>7h 25m used</span>
-            <span>12h 35m remaining</span>
-          </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: '37%' }}
-              transition={{ duration: 1, delay: 0.4, ease: 'easeOut' }}
-              className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, #4285F4, #FBBC05)' }}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-3 flex-wrap">
-          <button className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #4285F4, #34A853)', fontFamily: 'Manrope' }}>
-            Purchase Additional Hours
-          </button>
-          <button className="px-5 py-2.5 rounded-xl text-sm font-medium text-[#9898a8] transition-all hover:text-white"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'Manrope' }}>
-            Upgrade Plan
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Plans comparison */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <h2 className="text-base font-semibold text-white mb-4" style={{ fontFamily: 'Manrope' }}>Available Plans</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className="rounded-2xl p-6 relative"
-              style={{
-                background: plan.current ? 'rgba(66,133,244,0.08)' : '#0d0d14',
-                border: `1px solid ${plan.current ? 'rgba(66,133,244,0.4)' : 'rgba(255,255,255,0.07)'}`,
-              }}
-            >
-              {plan.current && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-xs px-3 py-0.5 rounded-full font-medium whitespace-nowrap"
-                  style={{ background: '#4285F4', color: '#fff', fontFamily: 'Manrope' }}>Current Plan</span>
-              )}
-              <h3 className="text-white font-semibold mb-1" style={{ fontFamily: 'Manrope' }}>{plan.name}</h3>
-              <p className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Manrope' }}>{plan.price}</p>
-              <p className="text-xs text-[#6b7280] mb-3">per month</p>
-              <div className="space-y-1.5 text-xs text-[#9898a8]">
-                <div className="flex items-center gap-2"><span className="text-[#34A853]">✓</span>{plan.hours}h / month</div>
-                <div className="flex items-center gap-2"><span className="text-[#34A853]">✓</span>Response: {plan.response}</div>
-              </div>
-              {!plan.current && (
-                <button className="mt-4 w-full py-2 rounded-lg text-xs font-medium text-[#9898a8] hover:text-white transition-all"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'Manrope' }}>
-                  Switch Plan
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    </div>
+        <Disclosure title="Request cancellation or a custom agreement">
+          <Form
+            submit="Send request"
+            fields={[
+              {
+                name: "kind",
+                label: "Request type",
+                type: "select",
+                required: true,
+                options: [
+                  { value: "cancellation", label: "Cancel before next period" },
+                  { value: "support", label: "Custom / enterprise agreement" },
+                ],
+              },
+              {
+                name: "body",
+                label: "Details",
+                type: "textarea",
+                required: true,
+              },
+            ]}
+            onSubmit={async (v) => {
+              await send("/requests", {
+                kind: v.kind,
+                title:
+                  v.kind === "cancellation"
+                    ? "Plan cancellation request"
+                    : "Custom support agreement",
+                body: v.body,
+              });
+              await refresh();
+            }}
+          />
+        </Disclosure>
+      </Panel>
+    </>
   );
 }

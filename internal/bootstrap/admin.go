@@ -27,9 +27,12 @@ func EnsureAdmin(
 		return nil
 	}
 
-	_, err := users.FindByEmail(ctx, email)
+	existing, err := users.FindByEmail(ctx, email)
 
 	if err == nil {
+		if existing.Role != domain.UserRoleAdmin {
+			return fmt.Errorf("bootstrap email belongs to a client; choose a different admin email")
+		}
 		return nil
 	}
 

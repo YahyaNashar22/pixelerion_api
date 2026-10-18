@@ -1,10 +1,11 @@
 {
-  "description": "Enables users to quickly create and customize digital projects with intuitive tools, streamlining the design process for professionals and beginners alike.",
+  "description": "Independent software development, thoughtful design and ongoing support. Follow your project, milestones and support in your client workspace.",
   "robots": {
     "index": false
   },
   "accessibility": {
     "addBypassLinks": false,
     "ignoreReducedMotion": false
-  }
+  },
+  "title": "Pixelerion ? Digital products, thoughtfully built."
 }

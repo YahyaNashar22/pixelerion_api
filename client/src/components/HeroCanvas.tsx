@@ -1,13 +1,13 @@
-import { useRef, useMemo, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float } from '@react-three/drei';
-import * as THREE from 'three';
+import { useRef, useMemo, useEffect } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Float } from "@react-three/drei";
+import * as THREE from "three";
 
 const COLORS = [
-  new THREE.Color('#4285F4'),
-  new THREE.Color('#EA4335'),
-  new THREE.Color('#FBBC05'),
-  new THREE.Color('#34A853'),
+  new THREE.Color("#4285F4"),
+  new THREE.Color("#EA4335"),
+  new THREE.Color("#FBBC05"),
+  new THREE.Color("#34A853"),
 ];
 
 interface MouseState {
@@ -15,17 +15,29 @@ interface MouseState {
   y: number;
 }
 
-function PixelerionCore({ mouse }: { mouse: React.MutableRefObject<MouseState> }) {
+function PixelerionCore({
+  mouse,
+}: {
+  mouse: React.MutableRefObject<MouseState>;
+}) {
   const groupRef = useRef<THREE.Group>(null!);
   const meshRefs = useRef<THREE.Mesh[]>([]);
 
   const blocks = useMemo(() => {
     const items = [];
     const positions = [
-      [0, 0, 0], [1.2, 0.3, -0.5], [-1.2, 0.3, -0.5],
-      [0, 1.2, 0], [0.6, -0.8, 0.4], [-0.6, -0.8, 0.4],
-      [1.5, -0.5, 0.2], [-1.5, -0.5, 0.2], [0, 0, 1.2],
-      [0.8, 1.0, 0.6], [-0.8, 1.0, 0.6], [1.2, -1.2, -0.3],
+      [0, 0, 0],
+      [1.2, 0.3, -0.5],
+      [-1.2, 0.3, -0.5],
+      [0, 1.2, 0],
+      [0.6, -0.8, 0.4],
+      [-0.6, -0.8, 0.4],
+      [1.5, -0.5, 0.2],
+      [-1.5, -0.5, 0.2],
+      [0, 0, 1.2],
+      [0.8, 1.0, 0.6],
+      [-0.8, 1.0, 0.6],
+      [1.2, -1.2, -0.3],
     ];
     for (let i = 0; i < positions.length; i++) {
       const [x, y, z] = positions[i];
@@ -60,7 +72,9 @@ function PixelerionCore({ mouse }: { mouse: React.MutableRefObject<MouseState> }
       {blocks.map((block, i) => (
         <mesh
           key={i}
-          ref={(el) => { if (el) meshRefs.current[i] = el; }}
+          ref={(el) => {
+            if (el) meshRefs.current[i] = el;
+          }}
           position={block.position}
         >
           <boxGeometry args={[block.scale, block.scale, block.scale]} />
@@ -84,17 +98,36 @@ function ConnectionLines() {
 
   const lineObjects = useMemo(() => {
     const pts = [
-      [0, 0, 0], [1.2, 0.3, -0.5], [-1.2, 0.3, -0.5],
-      [0, 1.2, 0], [0.6, -0.8, 0.4], [-0.6, -0.8, 0.4],
-    ] as [number,number,number][];
-    const pairs = [[0,1],[0,2],[0,3],[1,3],[2,3],[0,4],[0,5],[4,5],[1,4],[2,5]];
+      [0, 0, 0],
+      [1.2, 0.3, -0.5],
+      [-1.2, 0.3, -0.5],
+      [0, 1.2, 0],
+      [0.6, -0.8, 0.4],
+      [-0.6, -0.8, 0.4],
+    ] as [number, number, number][];
+    const pairs = [
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [1, 3],
+      [2, 3],
+      [0, 4],
+      [0, 5],
+      [4, 5],
+      [1, 4],
+      [2, 5],
+    ];
     const group = new THREE.Group();
     pairs.forEach(([a, b]) => {
       const geom = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(...pts[a]!),
         new THREE.Vector3(...pts[b]!),
       ]);
-      const mat = new THREE.LineBasicMaterial({ color: COLORS[a % 4], transparent: true, opacity: 0.2 });
+      const mat = new THREE.LineBasicMaterial({
+        color: COLORS[a % 4],
+        transparent: true,
+        opacity: 0.2,
+      });
       group.add(new THREE.Line(geom, mat));
     });
     return group;
@@ -102,7 +135,8 @@ function ConnectionLines() {
 
   useFrame(({ clock }) => {
     lineObjects.rotation.y = clock.elapsedTime * 0.08;
-    if (groupRef.current) groupRef.current.rotation.y = clock.elapsedTime * 0.08;
+    if (groupRef.current)
+      groupRef.current.rotation.y = clock.elapsedTime * 0.08;
   });
 
   return <primitive ref={groupRef} object={lineObjects} />;
@@ -128,7 +162,8 @@ function Particles() {
 
   useFrame(() => {
     if (!particlesRef.current) return;
-    const pos = particlesRef.current.geometry.attributes.position!.array as Float32Array;
+    const pos = particlesRef.current.geometry.attributes.position!
+      .array as Float32Array;
     for (let i = 0; i < count; i++) {
       pos[i * 3] += velocities[i * 3];
       pos[i * 3 + 1] += velocities[i * 3 + 1];
@@ -145,7 +180,13 @@ function Particles() {
       <bufferGeometry>
         <bufferAttribute args={[positions, 3]} attach="attributes-position" />
       </bufferGeometry>
-      <pointsMaterial size={0.04} color="#ffffff" transparent opacity={0.4} sizeAttenuation />
+      <pointsMaterial
+        size={0.04}
+        color="#ffffff"
+        transparent
+        opacity={0.4}
+        sizeAttenuation
+      />
     </points>
   );
 }
@@ -175,8 +216,8 @@ export default function HeroCanvas() {
       mouse.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
       mouse.current.y = -(e.clientY / window.innerHeight - 0.5) * 2;
     };
-    window.addEventListener('mousemove', handler);
-    return () => window.removeEventListener('mousemove', handler);
+    window.addEventListener("mousemove", handler);
+    return () => window.removeEventListener("mousemove", handler);
   }, []);
 
   return (

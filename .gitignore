@@ -7,3 +7,10 @@ bin/
 tmp/
 
 *.log
+data/
+.tmp/
+*.db
+*.db-shm
+*.db-wal
+client/node_modules/
+client/dist/
